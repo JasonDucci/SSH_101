@@ -7,7 +7,9 @@
 
 4. [Install and Connect SSH](#install)
 
-5. [Conclusion](#conclusion)
+5. [Best Pratice & Security Measures](#secure)
+
+6. [Conclusion](#conclusion)
 
 <a name="overview"></a>
 ## 1. Overview
@@ -72,18 +74,18 @@ SSH is a versatile protocol with numerous applications, including:
 <a name="install"></a>
 ## 4. Install and Connect SSH
 
-### On Linux/macOS
-Most UNIX-based systems come with SSH pre-installed. To check:
-
+### On Linux/macOS 
+Most UNIX-based systems come with SSH pre-installed. 
+- To check:
 ```sh 
 ssh -V
 ```
-If not installed, use:
+- If not installed, use:
 ```sh 
 sudo apt install openssh-client   # Debian-based (Ubuntu)
 sudo yum install openssh-clients  # RHEL-based (CentOS)
 ```
-For the SSH server:
+- For the SSH server:
 ```sh 
 sudo apt install openssh-server  # Debian-based
 sudo systemctl enable --now ssh   # Start SSH service
@@ -96,42 +98,132 @@ Open Settings > Apps > Optional features.
 
 Search for "OpenSSH Client" and "OpenSSH Server", then install.
 
-Start the SSH service using:
+- Start the SSH service using:
 
-Connecting to an SSH Server
+```sh 
+Start-Service sshd
+Set-Service -Name sshd -StartupType Automatic
+```
 
-To connect to a remote server using SSH:
+### Connecting to an SSH Server
 
-Example:
+- To connect to a remote server using SSH:
 
-If using an SSH key pair:
+```sh
+ssh username@remote_host
+```
 
-Generating SSH Key Pairs
+- Example:
 
-To enhance security, SSH key-based authentication is recommended over password authentication. To generate an SSH key pair:
+```sh
+ssh user@192.168.1.10
+```
+- If using an SSH key pair:
+```sh
+ssh -i /path/to/private_key user@remote_host
+```
+### Generating SSH Key Pairs
 
-This creates a public and private key pair. The public key should be copied to the remote server using:
+- To enhance security, SSH key-based authentication is recommended over password authentication. To generate an SSH key pair:
+```sh
+ssh-keygen -t rsa -b 4096 -C "your_email@example.com"
+```
+- This creates a public and private key pair. The public key should be copied to the remote server using:
+```sh
+ssh-copy-id user@remote_host
+```
+Alternatively, you can manually append your public key to the (~/.ssh/authorized_keys) file on the server.
 
-Alternatively, you can manually append your public key to the ~/.ssh/authorized_keys file on the server.
+### Transferring Files via SSH
 
-Transferring Files via SSH
+- To securely copy files between a local and remote machine:
+```sh
+scp file.txt user@remote_host:/remote/path/
+```
+- To copy an entire directory recursively:
+```sh
+scp -r /local/directory user@remote_host:/remote/directory
+```
+- To use SFTP:
+```sh
+sftp user@remote_host
+sftp> put file.txt  # Upload file
+sftp> get file.txt  # Download file
+```
+### SSH Port Forwarding (Tunneling)
 
-To securely copy files between a local and remote machine:
+**Local Port Forwarding**
 
-To copy an entire directory recursively:
+- This forwards traffic fromTo copy an entire directory recursively:
+```sh
+scp -r /local/directory user@remote_host:/remote/directory
+```
+- To use SFTP:
+```sh
+sftp user@remote_host
+sftp> put file.txt  # Upload file
+sftp> get file.txt  # Download file
+```
+- A local port to a remote machine securely:
+```sh
+ssh -L 8080:remote_host:80 user@remote_host
+```
+**Remote Port Forwarding**
 
-To use SFTP:
+- This forwards a remote port to a local machine:
+```sh
+ssh -R 8080:localhost:80 user@remote_host
+```
+**Dynamic Port Forwarding (SOCKS Proxy)**
 
-SSH Port Forwarding (Tunneling)
+- This allows SSH to act as a proxy:
+```sh
+ssh -D 1080 user@remote_host
+```
+<a name="secure"></a>
+## 5. Best Pratice & Security Measures (Optional but recommended)
+To enhance SSH security and performance, consider these best practices:
 
-Local Port Forwarding
+### Disable Root Login
+- Prevent direct root access via SSH to reduce security risks:
+```sh
+sudo nano /etc/ssh/sshd_config
+# Set:
+PermitRootLogin no
+```
+- Restart SSH service:
+```sh
+sudo systemctl restart ssh
+```
+### Use Key-Based Authentication Instead of Passwords
+- Avoid password-based logins by enforcing SSH keys:
+```sh
+PasswordAuthentication no
+```
+### Change the Default SSH Port
+- Change the SSH port from 22 to a custom port:
+```sh
+Port 2222
+```
+- Restart SSH:
+```sh
+sudo systemctl restart ssh
+```
+### Use SSH Agent for Key Management
+- Instead of typing the SSH key passphrase every time:
+```sh
+ssh-agent bash
+ssh-add ~/.ssh/id_rsa
+```
+### Enable Fail2Ban to Prevent Brute-Force Attacks
+- Install and configure Fail2Ban to block multiple failed login attempts:
+```sh
+sudo apt install fail2ban
+```
+### Use Multi-Factor Authentication (MFA)
+For extra security, enable MFA with tools like Google Authenticator or Duo Security.
 
-This forwards traffic from a local port to a remote machine securely:
+<a name="conclusion"></a>
+## 6. Conclusion
+SSH is an essential tool for secure remote access, system administration, and file transfer. Understanding how to install, configure, and use SSH effectively enhances security and efficiency in managing remote systems. With features like key-based authentication, port forwarding, and encryption, SSH remains a critical component in modern IT infrastructure.
 
-Remote Port Forwarding
-
-This forwards a remote port to a local machine:
-
-Dynamic Port Forwarding (SOCKS Proxy)
-
-This allows SSH to act as a proxy
